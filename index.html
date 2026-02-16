@@ -3,367 +3,460 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoodSync - ติดตามความสัมพันธ์สารอาหารและอารมณ์</title>
+    <title>MoodSync - Real Logic Calculation</title>
+    
+    <!-- React & Tailwind -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Itim&display=swap');
-        
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #fff5f7;
-            color: #4a4a4a;
-        }
-
-        .font-itim {
-            font-family: 'Itim', cursive;
-        }
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(255, 182, 193, 0.2);
-            transition: transform 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        .btn-pink {
-            background-color: #ffb6c1;
-            color: white;
-            transition: all 0.3s;
-        }
-
-        .btn-pink:hover {
-            background-color: #ff9aa8;
-            box-shadow: 0 4px 10px rgba(255, 154, 168, 0.4);
-        }
-
-        .mood-icon {
-            font-size: 2rem;
-            cursor: pointer;
-            transition: transform 0.2s;
-            filter: grayscale(100%);
-        }
-
-        .mood-icon.active {
-            filter: grayscale(0%);
-            transform: scale(1.2);
-        }
-
-        .hidden-panel {
-            display: none;
-        }
-
-        .active-panel {
-            display: block;
-            animation: fadeIn 0.5s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .nav-item.active {
-            color: #ff8fa3;
-            border-bottom: 3px solid #ff8fa3;
-        }
+        body { font-family: 'Kanit', sans-serif; background-color: #fff1f2; color: #4a4a4a; }
+        .font-eng { font-family: 'Quicksand', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); }
+        .animate-up { animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     </style>
-</head>
-<body class="pb-20">
-
-    <!-- Header -->
-    <header class="bg-white p-6 shadow-sm sticky top-0 z-50">
-        <div class="max-w-md mx-auto flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-pink-400 font-itim">MoodSync ✨</h1>
-                <p class="text-xs text-gray-500">สัมพันธ์ลำไส้และอารมณ์ของคุณ</p>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="togglePanel('risk')" class="text-pink-400 text-xl"><i class="fas fa-heart-pulse"></i></button>
-                <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-user text-pink-400"></i>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-md mx-auto p-4 space-y-6">
-        
-        <!-- Mood Tracker Section -->
-        <section id="mood-panel" class="panel active-panel space-y-4">
-            <div class="card p-5">
-                <h3 class="font-bold mb-4 flex items-center gap-2">
-                    <i class="fas fa-face-smile text-yellow-400"></i> ตอนนี้คุณรู้สึกอย่างไร?
-                </h3>
-                <div class="flex justify-between items-center px-2">
-                    <div onclick="selectMood(this, 'very_happy')" class="mood-icon text-center">🤩<br><span class="text-[10px]">ดีมาก</span></div>
-                    <div onclick="selectMood(this, 'happy')" class="mood-icon text-center">😊<br><span class="text-[10px]">ดี</span></div>
-                    <div onclick="selectMood(this, 'neutral')" class="mood-icon text-center">😐<br><span class="text-[10px]">เฉยๆ</span></div>
-                    <div onclick="selectMood(this, 'sad')" class="mood-icon text-center">😔<br><span class="text-[10px]">เศร้า</span></div>
-                    <div onclick="selectMood(this, 'tired')" class="mood-icon text-center">😫<br><span class="text-[10px]">เหนื่อย</span></div>
-                </div>
-            </div>
-
-            <!-- Food Logging Section -->
-            <div class="card p-5">
-                <h3 class="font-bold mb-4 flex items-center gap-2">
-                    <i class="fas fa-utensils text-pink-400"></i> Smart Food Logging
-                </h3>
-                <div class="space-y-4">
-                    <input type="text" id="food-name" placeholder="คุณทานอะไรมา..." class="w-full p-3 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-pink-200 outline-none">
-                    
-                    <p class="text-sm font-semibold text-gray-600">สารอาหารสำคัญที่พบ:</p>
-                    <div class="flex flex-wrap gap-2">
-                        <label class="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full text-xs cursor-pointer border border-blue-100">
-                            <input type="checkbox" value="probiotics" class="accent-blue-400"> โพรไบโอติกส์
-                        </label>
-                        <label class="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full text-xs cursor-pointer border border-green-100">
-                            <input type="checkbox" value="b12" class="accent-green-400"> วิตามิน B6/B12
-                        </label>
-                        <label class="flex items-center gap-1 bg-purple-50 px-3 py-1 rounded-full text-xs cursor-pointer border border-purple-100">
-                            <input type="checkbox" value="magnesium" class="accent-purple-400"> แมกนีเซียม
-                        </label>
-                        <label class="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full text-xs cursor-pointer border border-yellow-100">
-                            <input type="checkbox" value="sugar" class="accent-yellow-400"> น้ำตาลสูง
-                        </label>
-                    </div>
-
-                    <div class="pt-2 border-t border-dashed">
-                        <p class="text-sm font-semibold text-gray-600 mb-2">Gut-Check (ระบบขับถ่าย):</p>
-                        <select id="gut-status" class="w-full p-2 bg-pink-50 rounded-lg text-sm outline-none border-none">
-                            <option value="normal">ปกติ</option>
-                            <option value="bloated">ท้องอืด/แก๊สเยอะ</option>
-                            <option value="constipation">ขับถ่ายยาก</option>
-                        </select>
-                    </div>
-
-                    <button onclick="saveEntry()" class="w-full btn-pink py-3 rounded-xl font-bold">บันทึกข้อมูล</button>
-                </div>
-            </div>
-
-            <!-- Suggestion Card -->
-            <div id="suggestion-box" class="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex gap-4 items-start">
-                <div class="text-2xl">💡</div>
-                <div>
-                    <h4 class="font-bold text-blue-800 text-sm">Nutritional Prescription</h4>
-                    <p id="suggestion-text" class="text-xs text-blue-600 mt-1">วันนี้คุณยังไม่ได้บันทึกอารมณ์ ลองบันทึกเพื่อให้ AI ช่วยวิเคราะห์มื้อถัดไปนะคะ</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Insights Panel -->
-        <section id="insight-panel" class="panel hidden-panel space-y-4">
-            <div class="card p-5">
-                <h3 class="font-bold mb-4">วิเคราะห์ดัชนีความสุขจากอาหาร</h3>
-                <canvas id="moodChart" height="200"></canvas>
-                <div class="mt-4 p-3 bg-pink-50 rounded-lg text-xs leading-relaxed">
-                    <p><strong>AI Insight:</strong> เราพบว่าเมื่อคุณรับประทานอาหารกลุ่ม <span class="text-pink-500 font-bold">โพรไบโอติกส์</span> อารมณ์ของคุณจะเสถียรขึ้นในช่วง 4 ชม. ต่อมาอย่างมีนัยสำคัญ</p>
-                </div>
-            </div>
-
-            <div class="card p-5">
-                <h3 class="font-bold mb-3 text-sm flex justify-between">
-                    <span>Bio-Feedback Data</span>
-                    <span class="text-green-500 text-[10px] uppercase font-bold">● Connected</span>
-                </h3>
-                <div class="flex items-center justify-between">
-                    <div class="text-center">
-                        <p class="text-[10px] text-gray-400">Stress (HRV)</p>
-                        <p class="text-lg font-bold text-pink-400">65 ms</p>
-                    </div>
-                    <div class="h-8 w-[1px] bg-gray-200"></div>
-                    <div class="text-center">
-                        <p class="text-[10px] text-gray-400">Sleep Score</p>
-                        <p class="text-lg font-bold text-indigo-400">82/100</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Community Panel -->
-        <section id="community-panel" class="panel hidden-panel space-y-4">
-            <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                <span class="bg-pink-400 text-white px-4 py-1 rounded-full text-xs whitespace-nowrap">#All</span>
-                <span class="bg-white border border-pink-200 text-pink-400 px-4 py-1 rounded-full text-xs whitespace-nowrap">#MenuForAnxiety</span>
-                <span class="bg-white border border-pink-200 text-pink-400 px-4 py-1 rounded-full text-xs whitespace-nowrap">#EnergyBoost</span>
-            </div>
-            
-            <div class="card overflow-hidden">
-                <div class="h-32 bg-gray-200 relative">
-                    <img src="https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=500&q=80" alt="Yogurt Bowl" class="w-full h-full object-cover">
-                    <span class="absolute top-2 right-2 bg-white/80 backdrop-blur px-2 py-1 rounded text-[10px] font-bold">#GutHealth</span>
-                </div>
-                <div class="p-3">
-                    <h4 class="font-bold text-sm">Greek Yogurt Bowl with Berries</h4>
-                    <p class="text-xs text-gray-500 mt-1">มื้อเช้าที่ช่วยให้สมองแจ่มใสด้วยวิตามิน B และโพรไบโอติกส์</p>
-                    <div class="flex justify-between items-center mt-3">
-                        <div class="flex items-center gap-2">
-                            <div class="w-5 h-5 bg-pink-100 rounded-full"></div>
-                            <span class="text-[10px]">NutriJoy</span>
-                        </div>
-                        <button class="text-pink-400 text-sm"><i class="far fa-heart"></i> 24</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Risk Screening Panel -->
-        <section id="risk-panel" class="panel hidden-panel space-y-4">
-            <div class="card p-5 bg-red-50 border border-red-100">
-                <h3 class="font-bold text-red-600 flex items-center gap-2">
-                    <i class="fas fa-warning"></i> ระบบคัดกรองความเสี่ยง
-                </h3>
-                <p class="text-xs text-red-500 mt-2">แบบประเมินสุขภาพจิตเบื้องต้น (PHQ-9)</p>
-                <div class="mt-4 space-y-3">
-                    <p class="text-sm">ในช่วง 2 สัปดาห์นี้ คุณรู้สึกไม่สบายใจ ท้อแท้ หรือสิ้นหวังบ่อยแค่ไหน?</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button class="text-xs p-2 bg-white border rounded-lg hover:bg-pink-100">ไม่เลย</button>
-                        <button class="text-xs p-2 bg-white border rounded-lg hover:bg-pink-100">บางวัน</button>
-                        <button class="text-xs p-2 bg-white border rounded-lg hover:bg-pink-100">บ่อยครั้ง</button>
-                        <button class="text-xs p-2 bg-white border rounded-lg hover:bg-pink-100">เกือบทุกวัน</button>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 text-center">
-                <p class="text-[10px] text-gray-400 italic">ข้อมูลนี้ใช้เพื่อการคัดกรองเบื้องต้นเท่านั้น ไม่ใช่การวินิจฉัยทางการแพทย์</p>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-pink-100 py-3 px-6 flex justify-between items-center z-50">
-        <button onclick="togglePanel('mood')" id="nav-mood" class="nav-item active flex flex-col items-center gap-1 transition-all">
-            <i class="fas fa-home"></i>
-            <span class="text-[10px]">Home</span>
-        </button>
-        <button onclick="togglePanel('insight')" id="nav-insight" class="nav-item flex flex-col items-center gap-1 transition-all text-gray-400">
-            <i class="fas fa-chart-line"></i>
-            <span class="text-[10px]">Insights</span>
-        </button>
-        <div class="w-12 h-12 bg-pink-400 text-white rounded-full flex items-center justify-center -mt-10 shadow-lg border-4 border-white">
-            <i class="fas fa-plus"></i>
-        </div>
-        <button onclick="togglePanel('community')" id="nav-community" class="nav-item flex flex-col items-center gap-1 transition-all text-gray-400">
-            <i class="fas fa-users"></i>
-            <span class="text-[10px]">Community</span>
-        </button>
-        <button onclick="togglePanel('risk')" id="nav-risk" class="nav-item flex flex-col items-center gap-1 transition-all text-gray-400">
-            <i class="fas fa-shield-heart"></i>
-            <span class="text-[10px]">Risk Check</span>
-        </button>
-    </nav>
-
-    <!-- Floating Toast Message -->
-    <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-2 rounded-full text-xs opacity-0 transition-opacity pointer-events-none">
-        บันทึกข้อมูลสำเร็จ!
-    </div>
-
+    
     <script>
-        let currentMood = null;
-
-        function selectMood(element, mood) {
-            document.querySelectorAll('.mood-icon').forEach(icon => icon.classList.remove('active'));
-            element.classList.add('active');
-            currentMood = mood;
-            
-            // AI Prescription Logic
-            const suggestionText = document.getElementById('suggestion-text');
-            const suggestionBox = document.getElementById('suggestion-box');
-            
-            if (mood === 'tired') {
-                suggestionText.innerText = "แนะนำ: อาหารที่มีดัชนีน้ำตาลต่ำ (Low GI) เช่น ข้าวกล้อง หรืออัลมอนด์ เพื่อรักษาระดับพลังงานให้คงที่ค่ะ";
-                suggestionBox.className = "bg-orange-50 p-4 rounded-2xl border border-orange-100 flex gap-4 items-start";
-            } else if (mood === 'sad') {
-                suggestionText.innerText = "แนะนำ: อาหารที่มีแมกนีเซียมและ B12 เช่น ดาร์กช็อกโกแลต หรือ กล้วยหอม ช่วยปรับสมดุลสารสื่อประสาทค่ะ";
-                suggestionBox.className = "bg-pink-50 p-4 rounded-2xl border border-pink-100 flex gap-4 items-start";
-            } else {
-                suggestionText.innerText = "ยินดีด้วยที่คุณรู้สึกดี! อย่าลืมทานโพรไบโอติกส์เพื่อรักษา Gut-Brain Axis ให้แข็งแรงนะคะ";
-                suggestionBox.className = "bg-green-50 p-4 rounded-2xl border border-green-100 flex gap-4 items-start";
-            }
-        }
-
-        function togglePanel(panelName) {
-            document.querySelectorAll('.panel').forEach(p => {
-                p.classList.remove('active-panel');
-                p.classList.add('hidden-panel');
-            });
-            document.getElementById(panelName + '-panel').classList.remove('hidden-panel');
-            document.getElementById(panelName + '-panel').classList.add('active-panel');
-
-            // Nav update
-            document.querySelectorAll('.nav-item').forEach(n => {
-                n.classList.remove('active');
-                n.classList.add('text-gray-400');
-            });
-            const activeNav = document.getElementById('nav-' + panelName);
-            if(activeNav) {
-                activeNav.classList.add('active');
-                activeNav.classList.remove('text-gray-400');
-            }
-
-            if(panelName === 'insight') {
-                renderChart();
-            }
-        }
-
-        function saveEntry() {
-            const food = document.getElementById('food-name').value;
-            if (!food && !currentMood) {
-                alert("กรุณาเลือกอารมณ์หรือใส่ชื่ออาหารก่อนนะคะ");
-                return;
-            }
-
-            const toast = document.getElementById('toast');
-            toast.style.opacity = '1';
-            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
-            
-            // Clear inputs
-            document.getElementById('food-name').value = "";
-            document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
-        }
-
-        function renderChart() {
-            const ctx = document.getElementById('moodChart').getContext('2d');
-            
-            // Cleanup previous chart instance if exists
-            if (window.myChart) window.myChart.destroy();
-
-            window.myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'],
-                    datasets: [{
-                        label: 'ระดับความสุข (Food-Mood Index)',
-                        data: [65, 59, 80, 81, 56, 95, 88],
-                        borderColor: '#ff8fa3',
-                        backgroundColor: 'rgba(255, 143, 163, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, display: false },
-                        x: { grid: { display: false } }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#be185d', secondary: '#fbcfe8', accent: '#8b5cf6', success: '#10b981', warning: '#f59e0b',
                     }
                 }
-            });
+            }
         }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
 
-        // Initialize with Home
-        window.onload = () => {
-            console.log("MoodSync Ready!");
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        const { Heart, Utensils, Smile, BarChart2, Users, Plus, Activity, Brain, Zap, AlertTriangle, CheckCircle, RefreshCcw, Trash2 } = lucide;
+
+        // --- 1. Database & Config ---
+        const MOODS = [
+            { level: 1, label: "เศร้า/เครียด", score: 0, color: "bg-slate-400" },
+            { level: 2, label: "เหนื่อยล้า", score: 25, color: "bg-blue-300" },
+            { level: 3, label: "ปกติ", score: 50, color: "bg-yellow-400" },
+            { level: 4, label: "สดใส", score: 75, color: "bg-orange-400" },
+            { level: 5, label: "มีความสุข", score: 100, color: "bg-rose-500" }
+        ];
+
+        const NUTRIENTS = [
+            { id: 'probiotic', name: 'Probiotics', score: 10, type: 'good', desc: 'ดีต่อลำไส้' },
+            { id: 'b6b12', name: 'Vit B6/B12', score: 5, type: 'good', desc: 'สร้าง Serotonin' },
+            { id: 'magnesium', name: 'Magnesium', score: 5, type: 'good', desc: 'ลดเครียด' },
+            { id: 'lowgi', name: 'Low GI', score: 5, type: 'good', desc: 'พลังงานคงที่' },
+            { id: 'sugar', name: 'High Sugar', score: -15, type: 'bad', desc: 'Sugar Crash' },
+            { id: 'greasy', name: 'High Fat/Greasy', score: -5, type: 'bad', desc: 'ย่อยยาก' }
+        ];
+
+        const GUT_STATUS = [
+            { id: 'good', label: 'สบายท้อง', score: 10 },
+            { id: 'normal', label: 'ปกติ', score: 0 },
+            { id: 'bloated', label: 'ท้องอืด', score: -10 },
+            { id: 'constipated', label: 'ท้องผูก', score: -10 }
+        ];
+
+        // --- 2. Logic Engines (The Core Calculations) ---
+        
+        // A. Food-Mood Index Algorithm
+        const calculateHealthIndex = (logs) => {
+            if (!logs || logs.length === 0) return 50; // Default start
+
+            let totalScore = 0;
+            logs.forEach(log => {
+                // 1. Base Mood Score (0-100)
+                let logScore = MOODS.find(m => m.level === log.mood)?.score || 50;
+
+                // 2. Nutrient Impact
+                log.nutrients.forEach(nid => {
+                    const nutrient = NUTRIENTS.find(n => n.id === nid);
+                    if (nutrient) logScore += nutrient.score;
+                });
+
+                // 3. Gut Impact
+                const gut = GUT_STATUS.find(g => g.id === log.gutStatus);
+                if (gut) logScore += gut.score;
+
+                totalScore += logScore;
+            });
+
+            // Average and Clamp between 0-100
+            const average = totalScore / logs.length;
+            return Math.min(100, Math.max(0, Math.round(average)));
         };
+
+        // B. Nutritional Prescription Engine (Rule-based AI)
+        const generatePrescription = (lastLog) => {
+            if (!lastLog) return {
+                title: "เริ่มต้นการดูแล",
+                text: "ระบบต้องการข้อมูลมื้อแรกเพื่อวิเคราะห์ความต้องการของคุณ",
+                food: "น้ำเปล่า, ผลไม้สด",
+                tag: "Start"
+            };
+
+            const { mood, gutStatus, nutrients } = lastLog;
+            const hasSugar = nutrients.includes('sugar');
+
+            // Rule 1: Gut Issue Priority
+            if (gutStatus === 'bloated' || gutStatus === 'constipated') {
+                return {
+                    title: "ฟื้นฟูลำไส้ด่วน (Gut-First)",
+                    text: "ลำไส้แปรปรวนอาจส่งผลต่ออารมณ์ แนะนำเพิ่มจุลินทรีย์ดีและไฟเบอร์",
+                    food: "โยเกิร์ต, กิมจิ, มะละกอ",
+                    tag: "Gut Health"
+                };
+            }
+
+            // Rule 2: Sugar Crash Prevention
+            if (hasSugar && mood <= 3) {
+                return {
+                    title: "แก้ Sugar Crash",
+                    text: "คุณทานหวานไป และอารมณ์เริ่มดิ่ง ต้องรีบเติมโปรตีนหรือ Low GI",
+                    food: "ถั่วอัลมอนด์, ไข่ต้ม",
+                    tag: "Balance"
+                };
+            }
+
+            // Rule 3: Low Mood (Serotonin Boost)
+            if (mood <= 2) {
+                return {
+                    title: "Boost Serotonin",
+                    text: "อารมณ์ดูหม่นหมอง ลองเติม Tryptophan และ B6 เพื่อสร้างสารความสุข",
+                    food: "ดาร์กช็อกโกแลต, กล้วยหอม",
+                    tag: "Mood Lift"
+                };
+            }
+
+            // Rule 4: High Stress/Anxiety (Magnesium)
+            if (mood === 1) { // Assuming 1 is stressed/sad
+                return {
+                    title: "ลด Cortisol (ฮอร์โมนเครียด)",
+                    text: "ผ่อนคลายระบบประสาทด้วยแมกนีเซียม",
+                    food: "ผักโขม, เมล็ดฟักทอง",
+                    tag: "Relax"
+                };
+            }
+
+            // Default: Maintenance
+            return {
+                title: "รักษาสมดุล (Maintenance)",
+                text: "คุณทำได้ดี! รักษาระดับพลังงานให้คงที่ต่อไป",
+                food: "เบอร์รี่รวม, ปลาแซลมอน",
+                tag: "Excellent"
+            };
+        };
+
+        // C. Risk Assessment Logic
+        const assessRisk = (logs) => {
+            if (logs.length < 3) return { status: "Wait", text: "รอข้อมูลเพิ่ม...", color: "text-gray-500", bg: "bg-gray-100" };
+            
+            const recentLogs = logs.slice(0, 7); // Analyze last 7 entries
+            const lowMoodCount = recentLogs.filter(l => l.mood <= 2).length;
+            const riskPercentage = (lowMoodCount / recentLogs.length) * 100;
+
+            if (riskPercentage > 50) {
+                return { status: "High Risk", text: "พบแนวโน้มอารมณ์ซึมเศร้าต่อเนื่อง แนะนำปรึกษาผู้เชี่ยวชาญ", color: "text-red-600", bg: "bg-red-50" };
+            } else if (riskPercentage > 25) {
+                return { status: "Moderate", text: "อารมณ์แปรปรวนเล็กน้อย ลองปรับการนอนและอาหาร", color: "text-orange-600", bg: "bg-orange-50" };
+            } else {
+                return { status: "Normal", text: "สุขภาพจิตอยู่ในเกณฑ์ดี", color: "text-green-600", bg: "bg-green-50" };
+            }
+        };
+
+
+        // --- 3. Components ---
+
+        const Dashboard = ({ logs, hrv }) => {
+            const lastLog = logs[0];
+            const prescription = useMemo(() => generatePrescription(lastLog), [lastLog]);
+            const risk = useMemo(() => assessRisk(logs), [logs]);
+
+            return (
+                <div className="p-6 pb-24 space-y-5 animate-up">
+                    <header className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-800">MoodSync AI</h1>
+                            <p className="text-xs text-gray-500">Live Monitor & Analytics</p>
+                        </div>
+                        <div className="bg-rose-100 p-2 rounded-full text-primary font-bold">{logs.length} Log</div>
+                    </header>
+
+                    {/* Live Bio-Feedback (Real Simulation) */}
+                    <div className="bg-gray-900 rounded-3xl p-5 text-white shadow-xl relative overflow-hidden">
+                        <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                                <span className="relative flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+                                </span>
+                                <span className="text-[10px] uppercase tracking-widest text-gray-400">Live HRV</span>
+                            </div>
+                            <Heart size={20} className="text-rose-500 animate-pulse" />
+                        </div>
+                        <div className="mt-4 flex items-end gap-2">
+                            <span className="text-5xl font-bold font-eng">{hrv}</span>
+                            <span className="text-sm text-gray-400 mb-2">ms</span>
+                        </div>
+                        <div className="mt-2 h-1 bg-gray-800 rounded overflow-hidden">
+                             <div className="h-full bg-gradient-to-r from-green-400 to-rose-500 transition-all duration-500" style={{width: `${Math.min(100, (hrv/100)*100)}%`}}></div>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-2 text-right">Updated: Real-time simulation</p>
+                    </div>
+
+                    {/* Dynamic Prescription */}
+                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-rose-100 relative">
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="bg-rose-50 p-2 rounded-lg text-primary"><Brain size={18} /></div>
+                            <h3 className="font-bold text-gray-700">คำแนะนำเฉพาะคุณ</h3>
+                        </div>
+                        <div className="space-y-2">
+                             <h4 className="text-lg font-bold text-primary">{prescription.title}</h4>
+                             <p className="text-sm text-gray-600">{prescription.text}</p>
+                             <div className="mt-3 bg-rose-50 p-3 rounded-xl border border-rose-100 flex items-center gap-3">
+                                <span className="text-2xl">🥗</span>
+                                <div>
+                                    <span className="text-xs font-bold text-rose-400 uppercase">Recommended</span>
+                                    <p className="font-bold text-gray-700 text-sm">{prescription.food}</p>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    {/* Risk Status */}
+                    <div className={`rounded-2xl p-4 flex items-center gap-4 ${risk.bg}`}>
+                        <div className={`p-2 rounded-full bg-white ${risk.color}`}><Activity size={20} /></div>
+                        <div>
+                            <p className="text-xs font-bold uppercase opacity-70">Mental Risk Screen</p>
+                            <p className={`font-bold text-sm ${risk.color}`}>{risk.status}</p>
+                            <p className="text-[10px] opacity-70">{risk.text}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Logger = ({ onSave }) => {
+            const [step, setStep] = useState(1);
+            const [data, setData] = useState({ mood: 3, food: '', nutrients: [], gutStatus: 'normal' });
+
+            const toggleNutrient = (id) => {
+                setData(prev => ({
+                    ...prev, nutrients: prev.nutrients.includes(id) ? prev.nutrients.filter(n => n !== id) : [...prev.nutrients, id]
+                }));
+            };
+
+            return (
+                <div className="h-full bg-white flex flex-col p-6 animate-up">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold">บันทึกใหม่</h2>
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">Step {step}/3</span>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto hide-scrollbar pb-20">
+                        {step === 1 && (
+                            <div className="space-y-6">
+                                <p className="text-center text-gray-500">วันนี้รู้สึกอย่างไร?</p>
+                                <div className="grid grid-cols-5 gap-2">
+                                    {MOODS.map(m => (
+                                        <button key={m.level} onClick={() => setData({...data, mood: m.level})} 
+                                            className={`flex flex-col items-center p-2 rounded-xl transition-all ${data.mood === m.level ? 'bg-rose-50 ring-2 ring-primary scale-110' : 'opacity-60'}`}>
+                                            <div className={`w-10 h-10 rounded-full ${m.color} mb-1`}></div>
+                                            <span className="text-[10px] font-bold">{m.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="pt-6 border-t">
+                                    <p className="text-center text-gray-500 mb-4">สุขภาพลำไส้ (Gut Check)</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {GUT_STATUS.map(g => (
+                                            <button key={g.id} onClick={() => setData({...data, gutStatus: g.id})}
+                                                className={`p-3 border rounded-xl text-sm ${data.gutStatus === g.id ? 'border-primary bg-rose-50 text-primary font-bold' : 'text-gray-500'}`}>
+                                                {g.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div className="space-y-4">
+                                <input type="text" placeholder="ทานอะไรมา..." className="w-full p-4 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary"
+                                    value={data.food} onChange={e => setData({...data, food: e.target.value})} />
+                                <p className="text-sm font-bold text-gray-600">วิเคราะห์สารอาหาร (Smart Log)</p>
+                                {NUTRIENTS.map(n => (
+                                    <button key={n.id} onClick={() => toggleNutrient(n.id)}
+                                        className={`w-full p-3 rounded-xl border flex justify-between items-center ${data.nutrients.includes(n.id) ? (n.type === 'good' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700') : 'bg-white text-gray-500'}`}>
+                                        <div className="text-left">
+                                            <span className="font-bold text-sm block">{n.name}</span>
+                                            <span className="text-[10px]">{n.desc}</span>
+                                        </div>
+                                        {data.nutrients.includes(n.id) && <CheckCircle size={16} />}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="text-center pt-10">
+                                <div className="text-6xl mb-4">📊</div>
+                                <h3 className="text-xl font-bold">ยืนยันข้อมูล?</h3>
+                                <div className="bg-gray-50 p-4 rounded-xl mt-4 text-left space-y-2">
+                                    <p><strong>อารมณ์:</strong> {MOODS.find(m => m.level === data.mood).label}</p>
+                                    <p><strong>อาหาร:</strong> {data.food || "-"}</p>
+                                    <p><strong>ลำไส้:</strong> {GUT_STATUS.find(g => g.id === data.gutStatus).label}</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="fixed bottom-24 left-6 right-6 flex gap-2">
+                        {step > 1 && <button onClick={() => setStep(step-1)} className="px-6 py-3 bg-gray-200 rounded-xl font-bold text-gray-600">กลับ</button>}
+                        <button onClick={() => step < 3 ? setStep(step+1) : onSave(data)} 
+                            className="flex-1 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-rose-200">
+                            {step < 3 ? 'ถัดไป' : 'บันทึกทันที'}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const Insights = ({ logs, onClear }) => {
+            const score = useMemo(() => calculateHealthIndex(logs), [logs]);
+
+            return (
+                <div className="p-6 pb-24 space-y-6 animate-up">
+                    <div className="flex justify-between items-end">
+                        <h2 className="text-2xl font-bold text-gray-800">ผลวิเคราะห์</h2>
+                        <button onClick={onClear} className="text-xs text-red-400 flex items-center gap-1"><Trash2 size={12}/> Reset Data</button>
+                    </div>
+
+                    {/* Real Calculated Gauge */}
+                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-rose-100 text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gray-100">
+                            <div className="h-full bg-gradient-to-r from-red-400 via-yellow-400 to-green-500" style={{width: `${score}%`}}></div>
+                        </div>
+                        <p className="text-gray-400 text-xs uppercase tracking-widest mb-2">Food-Mood Index</p>
+                        <h3 className="text-6xl font-bold text-primary font-eng mb-2">{score}</h3>
+                        <p className="text-sm text-gray-500">
+                            {score > 80 ? "ยอดเยี่ยม! สารอาหารส่งเสริมอารมณ์ดี" : 
+                             score > 50 ? "อยู่ในเกณฑ์ปกติ พยายามลดน้ำตาล" : 
+                             "ควรปรับปรุง! อาหารอาจกำลังทำร้ายอารมณ์"}
+                        </p>
+                    </div>
+
+                    {/* Timeline with Real Impact Indicators */}
+                    <div className="space-y-3">
+                        <h3 className="font-bold text-gray-700 text-sm">ประวัติล่าสุด (Timeline)</h3>
+                        {logs.length === 0 ? <p className="text-center text-gray-400 py-10">ไม่มีข้อมูล</p> : 
+                        logs.map((log, i) => {
+                            const moodObj = MOODS.find(m => m.level === log.mood);
+                            return (
+                                <div key={log.id} className="bg-white p-3 rounded-2xl flex items-center gap-3 border border-gray-50 shadow-sm">
+                                    <div className={`w-10 h-10 rounded-full ${moodObj.color} flex items-center justify-center text-white text-xs`}>
+                                        {log.mood}/5
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-sm truncate">{log.food || "ไม่ระบุ"}</p>
+                                        <div className="flex gap-1 mt-1">
+                                            {log.nutrients.map(n => (
+                                                <span key={n} className={`w-2 h-2 rounded-full ${NUTRIENTS.find(x=>x.id===n)?.type === 'good' ? 'bg-green-400' : 'bg-red-400'}`}></span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[10px] text-gray-400">{new Date(log.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 4. Main App & State Management ---
+
+        const App = () => {
+            const [tab, setTab] = useState('dash');
+            const [logs, setLogs] = useState([]);
+            const [hrv, setHrv] = useState(65); // Initial HRV
+
+            // Load Data
+            useEffect(() => {
+                const saved = localStorage.getItem('moodsync_real_db');
+                if (saved) setLogs(JSON.parse(saved));
+            }, []);
+
+            // Live Bio-Feedback Simulation Effect
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    // Randomly fluctuate HRV based on "Stress" simulation
+                    setHrv(prev => {
+                        const change = Math.floor(Math.random() * 5) - 2; // -2 to +2
+                        return Math.max(40, Math.min(100, prev + change));
+                    });
+                }, 2000); // Update every 2 seconds
+                return () => clearInterval(interval);
+            }, []);
+
+            const saveLog = (data) => {
+                const newLog = { 
+                    ...data, 
+                    id: Date.now(), 
+                    timestamp: new Date().toISOString() 
+                };
+                const updated = [newLog, ...logs];
+                setLogs(updated);
+                localStorage.setItem('moodsync_real_db', JSON.stringify(updated));
+                setTab('dash');
+            };
+
+            const clearData = () => {
+                if(confirm("ล้างข้อมูลทั้งหมด?")) {
+                    setLogs([]);
+                    localStorage.removeItem('moodsync_real_db');
+                }
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-[#fff1f2] relative shadow-2xl overflow-hidden flex flex-col">
+                    <main className="flex-1 relative z-10">
+                        {tab === 'dash' && <Dashboard logs={logs} hrv={hrv} />}
+                        {tab === 'log' && <Logger onSave={saveLog} />}
+                        {tab === 'insight' && <Insights logs={logs} onClear={clearData} />}
+                    </main>
+
+                    {/* Bottom Nav */}
+                    <div className="glass-panel fixed bottom-0 w-full max-w-md flex justify-around py-3 pb-6 rounded-t-3xl z-50">
+                        <button onClick={() => setTab('dash')} className={`flex flex-col items-center ${tab==='dash'?'text-primary scale-110':'text-gray-400'}`}>
+                            <Activity size={24} /><span className="text-[10px] mt-1">ภาพรวม</span>
+                        </button>
+                        <button onClick={() => setTab('log')} className="-mt-8 bg-primary text-white p-4 rounded-full shadow-lg shadow-rose-300 transform transition hover:scale-105">
+                            <Plus size={28} />
+                        </button>
+                        <button onClick={() => setTab('insight')} className={`flex flex-col items-center ${tab==='insight'?'text-primary scale-110':'text-gray-400'}`}>
+                            <BarChart2 size={24} /><span className="text-[10px] mt-1">วิเคราะห์</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
+
+
